@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import '../services/api_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 
 class OtpPage extends StatefulWidget {
   final String email;
@@ -23,8 +24,8 @@ class _OtpPageState extends State<OtpPage> {
     setState(() => isLoading = true);
 
     try {
-      final res =
-      await ApiService.verifyOtp(widget.email, otpController.text);
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.verifyOtp(widget.email, otpController.text);
 
       Fluttertoast.showToast(msg: "Email verified successfully");
 

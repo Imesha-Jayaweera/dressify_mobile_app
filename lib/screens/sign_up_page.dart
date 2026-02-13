@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import '../services/api_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import '../constants/enums.dart';
 import 'otp_page.dart';
+import 'package:intl/intl.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({Key? key}) : super(key: key);
@@ -13,14 +16,21 @@ class SignUpPage extends StatefulWidget {
 class _SignUpPageState extends State<SignUpPage> {
   final _formKey = GlobalKey<FormState>();
 
+  // Common fields
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final birthDateController = TextEditingController();
   final addressController = TextEditingController();
 
-  String sex = 'MALE';
-  String userType = 'CUSTOMER';
+  // Customer-specific fields
+  final birthDateController = TextEditingController();
+  Gender selectedGender = Gender.MALE;  // ✅ Using enum
+
+  // Business-specific fields
+  final shopNameController = TextEditingController();
+
+  // User type selection
+  UserType selectedUserType = UserType.CUSTOMER;
   bool isLoading = false;
 
   void signUp() async {
@@ -29,15 +39,33 @@ class _SignUpPageState extends State<SignUpPage> {
     setState(() => isLoading = true);
 
     try {
-      await ApiService.signUp({
-        "name": nameController.text,
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+      // Build request data based on user type
+      Map<String, dynamic> signUpData = {
         "email": emailController.text,
         "password": passwordController.text,
-        "birthDate": birthDateController.text,
-        "address": addressController.text,
-        "sex": sex,
-        "userType": userType,
-      });
+        "userType": selectedUserType.value,
+      };
+
+      // Add fields based on user type
+      if (selectedUserType == UserType.CUSTOMER) {
+        signUpData.addAll({
+          "name": nameController.text,
+          "birthDate": birthDateController.text,
+          "address": addressController.text,
+          "sex": selectedGender.value,  // ✅ Using enum value
+        });
+      } else {
+        // TAILOR or SHOPPING_CENTER
+        signUpData.addAll({
+          "name": shopNameController.text, // Shop/Business name
+          "shopName": nameController.text, // Business owner name
+          "address": addressController.text, // Business address
+        });
+      }
+
+      await authProvider.signUp(signUpData);
 
       Fluttertoast.showToast(
         msg: "OTP sent to your email",
@@ -51,12 +79,11 @@ class _SignUpPageState extends State<SignUpPage> {
         ),
       );
     } catch (e) {
-      Fluttertoast.showToast(msg: "Signup failed");
+      Fluttertoast.showToast(msg: "Signup failed: $e");
     } finally {
       setState(() => isLoading = false);
     }
   }
-
 
   /// INPUT FIELD WITH PLACEHOLDER
   Widget buildInput(
@@ -104,20 +131,28 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  /// SEGMENTED SELECTOR
-  Widget buildSelector(
-      List<String> values, String selected, Function(String) onTap) {
+  /// USER TYPE SELECTOR
+  Widget buildUserTypeSelector() {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFF2F2F2),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
-        children: values.map((v) {
-          final isSelected = v == selected;
+        children: UserType.values.map((type) {
+          final isSelected = type == selectedUserType;
           return Expanded(
             child: GestureDetector(
-              onTap: () => onTap(v),
+              onTap: () {
+                setState(() {
+                  selectedUserType = type;
+                  // Clear fields when switching types
+                  nameController.clear();
+                  birthDateController.clear();
+                  shopNameController.clear();
+                  addressController.clear();
+                });
+              },
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
@@ -126,12 +161,64 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 child: Center(
                   child: Text(
-                    v.replaceAll('_', ' ').toUpperCase(),
+                    type.displayName,
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 12,
-                      fontWeight:
-                      isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontSize: 11,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  /// GENDER SELECTOR (Only for CUSTOMER) - ✅ Using Enum
+  Widget buildGenderSelector() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F2F2),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: Gender.values.map((gender) {
+          final isSelected = gender == selectedGender;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => selectedGender = gender),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        gender.icon,
+                        size: 18,
+                        color: isSelected
+                            ? const Color(0xFF8E2DE2)
+                            : Colors.grey,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        gender.displayName,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: isSelected
+                              ? const Color(0xFF8E2DE2)
+                              : Colors.grey[700],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -144,6 +231,9 @@ class _SignUpPageState extends State<SignUpPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isCustomer = selectedUserType == UserType.CUSTOMER;
+    final isBusiness = !isCustomer;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6F0FA),
       body: SafeArea(
@@ -181,29 +271,48 @@ class _SignUpPageState extends State<SignUpPage> {
                   key: _formKey,
                   child: Column(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: buildInput(
-                              "Name",
-                              nameController,
-                              hint: "John",
-                              icon: Icons.person_outline,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                        ],
+                      /// USER TYPE SELECTOR (First)
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "Who Are You?",
+                          style: TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      buildUserTypeSelector(),
+                      const SizedBox(height: 24),
+
+                      /// BUSINESS NAME (only for TAILOR/SHOPPING_CENTER)
+                      if (isBusiness) ...[
+                        buildInput(
+                          "Shop/Business Name",
+                          shopNameController,
+                          hint: "Fashion Boutique",
+                          icon: Icons.store_outlined,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      /// OWNER NAME / CUSTOMER NAME
+                      buildInput(
+                        isCustomer ? "Name" : "Business Owner Name",
+                        nameController,
+                        hint: isCustomer ? "John Doe" : "John Doe",
+                        icon: Icons.person_outline,
                       ),
                       const SizedBox(height: 16),
 
+                      /// EMAIL
                       buildInput(
                         "Email",
                         emailController,
-                        hint: "customer@example.com",
+                        hint: "example@email.com",
                         icon: Icons.email_outlined,
                       ),
                       const SizedBox(height: 16),
 
+                      /// PASSWORD
                       buildInput(
                         "Password",
                         passwordController,
@@ -213,45 +322,57 @@ class _SignUpPageState extends State<SignUpPage> {
                       ),
                       const SizedBox(height: 16),
 
-                      buildInput(
-                        "Birth Date",
-                        birthDateController,
-                        hint: "YYYY-MM-DD",
-                        icon: Icons.calendar_today_outlined,
-                      ),
-                      const SizedBox(height: 16),
+                      /// BIRTH DATE (only for CUSTOMER)
+                      if (isCustomer) ...[
+                        buildInput(
+                          "Birth Date",
+                          birthDateController,
+                          hint: "Select your birth date",
+                          icon: Icons.calendar_today_outlined,
+                          readOnly: true,
+                          onTap: () async {
+                            DateTime? pickedDate = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime(2000),
+                              firstDate: DateTime(1950),
+                              lastDate: DateTime.now(),
+                            );
 
+                            if (pickedDate != null) {
+                              String formattedDate =
+                                  "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
+
+                              setState(() {
+                                birthDateController.text = formattedDate;
+                              });
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      /// ADDRESS
                       buildInput(
-                        "Address",
+                        isCustomer ? "Address" : "Business Address",
                         addressController,
-                        hint: "No. 45, Colombo",
+                        hint: isCustomer ? "No. 45, Colombo" : "Shop No. 12, Main Street",
                         icon: Icons.location_on_outlined,
                       ),
                       const SizedBox(height: 24),
 
-                      const Align(
+                      /// GENDER (only for CUSTOMER) - ✅ Using Enum
+                      if (isCustomer) ...[
+                        const Align(
                           alignment: Alignment.centerLeft,
-                          child: Text("Gender")),
-                      const SizedBox(height: 8),
-                      buildSelector(
-                        ["MALE", "FEMALE"],
-                        sex,
-                            (v) => setState(() => sex = v),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      const Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text("Who Are You")),
-                      const SizedBox(height: 8),
-                      buildSelector(
-                        ["CUSTOMER", "TAILOR", "SHOPPING_CENTER"],
-                        userType,
-                            (v) => setState(() => userType = v),
-                      ),
-
-                      const SizedBox(height: 30),
+                          child: Text(
+                            "Gender",
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        buildGenderSelector(),
+                        const SizedBox(height: 24),
+                      ],
 
                       /// SIGN UP BUTTON
                       SizedBox(
@@ -279,9 +400,9 @@ class _SignUpPageState extends State<SignUpPage> {
                               child: isLoading
                                   ? const CircularProgressIndicator(
                                   color: Colors.white)
-                                  : const Text(
-                                "Create Account",
-                                style: TextStyle(
+                                  : Text(
+                                "Create ${selectedUserType.displayName} Account",
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
@@ -316,5 +437,15 @@ class _SignUpPageState extends State<SignUpPage> {
       ),
     );
   }
-}
 
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    birthDateController.dispose();
+    addressController.dispose();
+    shopNameController.dispose();
+    super.dispose();
+  }
+}

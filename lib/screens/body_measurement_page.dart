@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../services/api_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/body_analysis_provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'fashion_tips_page.dart';
 
@@ -53,9 +54,19 @@ class _BodyMeasurementPageState extends State<BodyMeasurementPage> {
       print("First 50 chars of base64: ${base64Image.substring(0, 50)}");
 
       // Call your ApiService
-      final res = await ApiService.analyzeBodyImage(dataUrl);
-
-      setState(() => result = res);
+      final bodyAnalysisProvider = Provider.of<BodyAnalysisProvider>(context, listen: false);
+      final analysis = await bodyAnalysisProvider.analyzeBodyImage(dataUrl);
+      if (analysis != null) {
+        setState(() {
+          result = {
+            'gender': analysis.gender,
+            'skin_color': analysis.skinColor,
+            'body_type': analysis.bodyType,
+            'height_cm': analysis.heightCm,
+            'width_cm': analysis.widthCm,
+          };
+        });
+      }
       Fluttertoast.showToast(msg: "Analysis complete");
     } catch (e) {
       print("Error analyzing image: $e");

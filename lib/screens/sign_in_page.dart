@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import '../services/api_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import 'otp_page.dart';
 
 class SignInPage extends StatefulWidget {
@@ -21,7 +22,8 @@ class _SignInPageState extends State<SignInPage> {
     setState(() => isLoading = true);
 
     try {
-      final res = await ApiService.signIn({
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final res = await authProvider.signIn({
         "email": emailController.text,
         "password": passwordController.text,
       });

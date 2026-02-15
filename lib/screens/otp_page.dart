@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import 'shopping_center_dashboard.dart';
 
 class OtpPage extends StatefulWidget {
   final String email;
@@ -16,8 +17,10 @@ class _OtpPageState extends State<OtpPage> {
   bool isLoading = false;
 
   void verifyOtp() async {
-    if (otpController.text.length != 4) {
-      Fluttertoast.showToast(msg: "Enter 4-digit OTP");
+    final otpCode = otpController.text.trim();
+
+    if (otpCode.isEmpty) {
+      Fluttertoast.showToast(msg: "Please enter OTP code");
       return;
     }
 
@@ -25,15 +28,42 @@ class _OtpPageState extends State<OtpPage> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      await authProvider.verifyOtp(widget.email, otpController.text);
 
-      Fluttertoast.showToast(msg: "Email verified successfully");
+      // ✅ Pass 'code' parameter to match backend
+      await authProvider.verifyOtp(widget.email, otpCode);
 
-      Navigator.pushReplacementNamed(context, '/ai-image-analysis');
+      Fluttertoast.showToast(
+        msg: "Email verified successfully",
+        backgroundColor: Colors.green,
+      );
+
+      // ✅ Role-based navigation
+      final userType = authProvider.userType;
+
+      if (!mounted) return;
+
+      if (userType == 'SHOPPING_CENTER') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const ShoppingCenterDashboard(),
+          ),
+        );
+      } else if (userType == 'TAILOR') {
+        Navigator.pushReplacementNamed(context, '/tailor-dashboard');
+      } else {
+        // CUSTOMER
+        Navigator.pushReplacementNamed(context, '/ai-image-analysis');
+      }
     } catch (e) {
-      Fluttertoast.showToast(msg: "Invalid OTP");
+      Fluttertoast.showToast(
+        msg: "Invalid OTP code. Please try again.",
+        backgroundColor: Colors.red,
+      );
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
@@ -47,6 +77,22 @@ class _OtpPageState extends State<OtpPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Icon
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8E2DE2).withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.email_outlined,
+                  size: 60,
+                  color: Color(0xFF8E2DE2),
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
               const Text(
                 "Verify Email",
                 style: TextStyle(
@@ -55,38 +101,78 @@ class _OtpPageState extends State<OtpPage> {
                   color: Color(0xFFB23BC7),
                 ),
               ),
-              const SizedBox(height: 10),
-              Text(
-                "OTP sent to ${widget.email}",
-                style: const TextStyle(color: Colors.black54),
-              ),
-              const SizedBox(height: 30),
 
+              const SizedBox(height: 10),
+
+              Text(
+                "Enter the 4-digit code sent to",
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
+              ),
+
+              const SizedBox(height: 4),
+
+              Text(
+                widget.email,
+                style: const TextStyle(
+                  color: Color(0xFF8E2DE2),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+
+              const SizedBox(height: 40),
+
+              // OTP Input Field
               TextField(
                 controller: otpController,
                 keyboardType: TextInputType.number,
                 maxLength: 4,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 24,
-                  letterSpacing: 12,
+                  fontSize: 32,
+                  letterSpacing: 16,
+                  fontWeight: FontWeight.bold,
                 ),
                 decoration: InputDecoration(
                   counterText: "",
+                  hintText: "0000",
+                  hintStyle: TextStyle(
+                    color: Colors.grey[300],
+                    letterSpacing: 16,
+                  ),
                   filled: true,
                   fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 20),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF8E2DE2),
+                      width: 2,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: Colors.grey[300]!,
+                      width: 1,
+                    ),
                   ),
                 ),
               ),
 
               const SizedBox(height: 30),
 
+              // Verify Button
               SizedBox(
                 width: double.infinity,
-                height: 52,
+                height: 54,
                 child: ElevatedButton(
                   onPressed: isLoading ? null : verifyOtp,
                   style: ElevatedButton.styleFrom(
@@ -94,6 +180,7 @@ class _OtpPageState extends State<OtpPage> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     padding: EdgeInsets.zero,
+                    elevation: 0,
                   ),
                   child: Ink(
                     decoration: BoxDecoration(
@@ -107,7 +194,14 @@ class _OtpPageState extends State<OtpPage> {
                     ),
                     child: Center(
                       child: isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
+                          ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      )
                           : const Text(
                         "Verify OTP",
                         style: TextStyle(
@@ -120,10 +214,33 @@ class _OtpPageState extends State<OtpPage> {
                   ),
                 ),
               ),
+
+              const SizedBox(height: 24),
+
+              // Resend OTP option (optional)
+              TextButton(
+                onPressed: () {
+                  // TODO: Implement resend OTP functionality
+                  Fluttertoast.showToast(msg: "Resend OTP feature coming soon");
+                },
+                child: const Text(
+                  "Didn't receive code? Resend",
+                  style: TextStyle(
+                    color: Color(0xFF8E2DE2),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    otpController.dispose();
+    super.dispose();
   }
 }

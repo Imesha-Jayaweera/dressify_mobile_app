@@ -3,6 +3,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'otp_page.dart';
+import 'shopping_center_dashboard.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({Key? key}) : super(key: key);
@@ -16,7 +17,6 @@ class _SignInPageState extends State<SignInPage> {
   final TextEditingController passwordController = TextEditingController();
 
   bool isLoading = false;
-  int selectedRole = 0; // 0 = Customer, 1 = Shopping Center, 2 = Tailor
 
   void signIn() async {
     setState(() => isLoading = true);
@@ -39,15 +39,30 @@ class _SignInPageState extends State<SignInPage> {
         );
       } else {
         Fluttertoast.showToast(msg: "Login successful");
-        Navigator.pushReplacementNamed(context, '/ai-image-analysis');
+
+        // ✅ Role-based navigation
+        final userType = res['userType'];
+        if (userType == 'SHOPPING_CENTER') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const ShoppingCenterDashboard(),
+            ),
+          );
+        } else if (userType == 'TAILOR') {
+          // Navigate to tailor dashboard
+          Navigator.pushReplacementNamed(context, '/tailor-dashboard');
+        } else {
+          // Customer
+          Navigator.pushReplacementNamed(context, '/ai-image-analysis');
+        }
       }
     } catch (e) {
-      Fluttertoast.showToast(msg: "Login failed");
+      Fluttertoast.showToast(msg: "Login failed: $e");
     } finally {
       setState(() => isLoading = false);
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +99,7 @@ class _SignInPageState extends State<SignInPage> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
                       color: Colors.black12,
                       blurRadius: 20,
@@ -107,56 +122,6 @@ class _SignInPageState extends State<SignInPage> {
                       "Sign in to your account",
                       style: TextStyle(color: Colors.black54),
                     ),
-                    const SizedBox(height: 24),
-
-                    /// Role Selector
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF2F2F2),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: List.generate(3, (index) {
-                          final titles = ["Customer", "Shoping Center", "Tailor"];
-                          final icons = [
-                            Icons.person_outline,
-                            Icons.store_outlined,
-                            Icons.content_cut_outlined
-                          ];
-
-                          return Expanded(
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() => selectedRole = index);
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                decoration: BoxDecoration(
-                                  color: selectedRole == index
-                                      ? Colors.white
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Icon(
-                                      icons[index],
-                                      color: Colors.black87,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      titles[index],
-                                      style: const TextStyle(fontSize: 12),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
-
                     const SizedBox(height: 24),
 
                     /// Email
@@ -220,10 +185,11 @@ class _SignInPageState extends State<SignInPage> {
                           ),
                           child: Center(
                             child: isLoading
-                                ? const CircularProgressIndicator(color: Colors.white)
-                                : Text(
-                              "Sign In as ${["Customer", "Shopping Center", "Tailor"][selectedRole]}",
-                              style: const TextStyle(
+                                ? const CircularProgressIndicator(
+                                color: Colors.white)
+                                : const Text(
+                              "Sign In",
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,

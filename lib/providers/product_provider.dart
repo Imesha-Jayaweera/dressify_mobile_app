@@ -109,9 +109,6 @@ class ProductProvider with ChangeNotifier {
         '$BASE_URL/product/',
         data: formData,
         options: Options(
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
           sendTimeout: const Duration(seconds: 120),
           receiveTimeout: const Duration(seconds: 120),
         ),

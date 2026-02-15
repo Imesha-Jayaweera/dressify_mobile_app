@@ -95,10 +95,10 @@ class _AddProductPageState extends State<AddProductPage> {
   Future<void> submitProduct() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // if (selectedImages.isEmpty) {
-    //   Fluttertoast.showToast(msg: "Please add at least one image");
-    //   return;
-    // }
+    if (selectedImages.isEmpty) {
+      Fluttertoast.showToast(msg: "Please add at least one image");
+      return;
+    }
 
     if (selectedColors.isEmpty) {
       Fluttertoast.showToast(msg: "Please select at least one color");
@@ -121,17 +121,14 @@ class _AddProductPageState extends State<AddProductPage> {
         'suitableBodyTypes': selectedBodyTypes.isEmpty ? ['ALL'] : selectedBodyTypes,
       };
 
-      print('🚀 Submitting product with ${selectedImages.length} images');
-      print('🔑 Using userId: ${widget.userId}'); // ✅ Use widget.userId
-
       await productProvider.addProduct(
         productData,
         selectedImages,
-        widget.userId, // ✅ Use the passed userId
+        widget.userId,
       );
 
       Fluttertoast.showToast(
-        msg: "Product added successfully ✅",
+        msg: "Product added successfully",
         toastLength: Toast.LENGTH_LONG,
         backgroundColor: Colors.green,
       );

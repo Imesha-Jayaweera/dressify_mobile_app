@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import '../providers/product_provider.dart';
 import '../providers/order_provider.dart';
 import '../providers/auth_provider.dart';
@@ -17,6 +15,9 @@ class ShoppingCenterDashboard extends StatefulWidget {
 }
 
 class _ShoppingCenterDashboardState extends State<ShoppingCenterDashboard> {
+  // Track current image index for each product
+  Map<String, int> _currentImageIndexes = {};
+
   @override
   void initState() {
     super.initState();
@@ -36,7 +37,6 @@ class _ShoppingCenterDashboardState extends State<ShoppingCenterDashboard> {
           await Provider.of<OrderProvider>(context, listen: false).fetchOrders();
         } catch (e) {
           print('Error fetching orders: $e');
-          // Orders endpoint might not exist yet, so we'll just continue
         }
       }
     });
@@ -114,7 +114,7 @@ class _ShoppingCenterDashboardState extends State<ShoppingCenterDashboard> {
               ),
               const SizedBox(height: 12),
               const Text(
-                "This action cannot be undone.",
+                "This action cannot be undo.",
                 style: TextStyle(
                   color: Colors.red,
                   fontSize: 13,
@@ -124,7 +124,6 @@ class _ShoppingCenterDashboardState extends State<ShoppingCenterDashboard> {
             ],
           ),
           actions: [
-            // Cancel Button
             MouseRegion(
               cursor: SystemMouseCursors.click,
               child: TextButton(
@@ -147,7 +146,6 @@ class _ShoppingCenterDashboardState extends State<ShoppingCenterDashboard> {
                 ),
               ),
             ),
-            // Delete Button
             MouseRegion(
               cursor: SystemMouseCursors.click,
               child: ElevatedButton(
@@ -331,6 +329,13 @@ class _ShoppingCenterDashboardState extends State<ShoppingCenterDashboard> {
                 itemBuilder: (context, index) {
                   final product = productProvider.products[index];
 
+                  // Initialize current image index for this product
+                  if (!_currentImageIndexes.containsKey(product.id)) {
+                    _currentImageIndexes[product.id] = 0;
+                  }
+
+                  final currentImageIndex = _currentImageIndexes[product.id] ?? 0;
+
                   return Card(
                     elevation: 2,
                     shape: RoundedRectangleBorder(
@@ -340,29 +345,120 @@ class _ShoppingCenterDashboardState extends State<ShoppingCenterDashboard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Product Image
                         ClipRRect(
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(12),
                           ),
-                          child: Image.network(
-                            product.images.isNotEmpty
-                                ? product.images[0]
-                                : 'https://via.placeholder.com/150',
-                            height: 140,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stack) {
-                              return Container(
+                          child: Stack(
+                            children: [
+                              Image.network(
+                                product.images.isNotEmpty
+                                    ? product.images[currentImageIndex]
+                                    : 'https://via.placeholder.com/150',
                                 height: 140,
-                                color: Colors.grey[200],
-                                child: const Icon(
-                                  Icons.image_not_supported,
-                                  size: 50,
-                                  color: Colors.grey,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stack) {
+                                  return Container(
+                                    height: 140,
+                                    color: Colors.grey[200],
+                                    child: const Icon(
+                                      Icons.image_not_supported,
+                                      size: 50,
+                                      color: Colors.grey,
+                                    ),
+                                  );
+                                },
+                              ),
+
+                              if (product.images.length > 1) ...[
+                                Positioned(
+                                  left: 4,
+                                  top: 0,
+                                  bottom: 0,
+                                  child: Center(
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          if (currentImageIndex > 0) {
+                                            _currentImageIndexes[product.id] = currentImageIndex - 1;
+                                          } else {
+                                            _currentImageIndexes[product.id] = product.images.length - 1;
+                                          }
+                                        });
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.5),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.chevron_left,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              );
-                            },
+
+                                Positioned(
+                                  right: 4,
+                                  top: 0,
+                                  bottom: 0,
+                                  child: Center(
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          if (currentImageIndex < product.images.length - 1) {
+                                            _currentImageIndexes[product.id] = currentImageIndex + 1;
+                                          } else {
+                                            _currentImageIndexes[product.id] = 0;
+                                          }
+                                        });
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.5),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.chevron_right,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                // Image Counter
+                                Positioned(
+                                  bottom: 4,
+                                  right: 4,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.7),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      '${currentImageIndex + 1}/${product.images.length}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
 
@@ -419,7 +515,8 @@ class _ShoppingCenterDashboardState extends State<ShoppingCenterDashboard> {
 
                         // Edit/Delete Buttons
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8.0, vertical: 4.0),
                           child: Row(
                             children: [
                               Expanded(
@@ -427,36 +524,43 @@ class _ShoppingCenterDashboardState extends State<ShoppingCenterDashboard> {
                                   cursor: SystemMouseCursors.click,
                                   child: InkWell(
                                     onTap: () async {
-                                      // Navigate to edit page
                                       await Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (_) => EditProductPage(
+                                          builder: (_) => EditProductPageWithImages(
                                             product: product,
-                                            userId: authProvider.user?['userId'],
+                                            userId: authProvider
+                                                .user?['userId'],
                                           ),
                                         ),
                                       );
-                                      // Provider already refreshed the list
                                     },
-                                    borderRadius: BorderRadius.circular(6),
+                                    borderRadius:
+                                    BorderRadius.circular(6),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      padding:
+                                      const EdgeInsets.symmetric(
+                                          vertical: 8),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFF1E88E5),
-                                        borderRadius: BorderRadius.circular(6),
+                                        borderRadius:
+                                        BorderRadius.circular(6),
                                       ),
                                       child: const Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                        MainAxisAlignment.center,
                                         children: [
-                                          Icon(Icons.edit, size: 16, color: Colors.white),
+                                          Icon(Icons.edit,
+                                              size: 16,
+                                              color: Colors.white),
                                           SizedBox(width: 4),
                                           Text(
                                             "Edit",
                                             style: TextStyle(
                                               color: Colors.white,
                                               fontSize: 12,
-                                              fontWeight: FontWeight.w600,
+                                              fontWeight:
+                                              FontWeight.w600,
                                             ),
                                           ),
                                         ],
@@ -478,24 +582,32 @@ class _ShoppingCenterDashboardState extends State<ShoppingCenterDashboard> {
                                         productProvider,
                                       );
                                     },
-                                    borderRadius: BorderRadius.circular(6),
+                                    borderRadius:
+                                    BorderRadius.circular(6),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      padding:
+                                      const EdgeInsets.symmetric(
+                                          vertical: 8),
                                       decoration: BoxDecoration(
                                         color: Colors.red,
-                                        borderRadius: BorderRadius.circular(6),
+                                        borderRadius:
+                                        BorderRadius.circular(6),
                                       ),
                                       child: const Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                        MainAxisAlignment.center,
                                         children: [
-                                          Icon(Icons.delete, size: 16, color: Colors.white),
+                                          Icon(Icons.delete,
+                                              size: 16,
+                                              color: Colors.white),
                                           SizedBox(width: 4),
                                           Text(
                                             "Delete",
                                             style: TextStyle(
                                               color: Colors.white,
                                               fontSize: 12,
-                                              fontWeight: FontWeight.w600,
+                                              fontWeight:
+                                              FontWeight.w600,
                                             ),
                                           ),
                                         ],
@@ -572,11 +684,10 @@ class _ShoppingCenterDashboardState extends State<ShoppingCenterDashboard> {
             ),
           ],
         ),
-
-
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () {
-            final authProvider = Provider.of<AuthProvider>(context, listen: false);
+            final authProvider =
+            Provider.of<AuthProvider>(context, listen: false);
 
             final userId = authProvider.user?['userId'];
             print('🔍 Dashboard userId: $userId');

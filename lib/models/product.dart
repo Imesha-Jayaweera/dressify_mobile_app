@@ -12,8 +12,9 @@ class Product {
   final String shoppingCenterId;
   final int totalStock;
   final bool isAvailable;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+
+  // NEW: Seller info (populated from backend)
+  final SellerInfo? sellerInfo;
 
   Product({
     required this.id,
@@ -29,8 +30,7 @@ class Product {
     required this.shoppingCenterId,
     required this.totalStock,
     required this.isAvailable,
-    required this.createdAt,
-    required this.updatedAt,
+    this.sellerInfo,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -42,43 +42,31 @@ class Product {
       genderType: json['genderType'] ?? '',
       sizes: (json['sizes'] as List?)
           ?.map((s) => SizeStock.fromJson(s))
-          .toList() ??
-          [],
+          .toList() ?? [],
       images: List<String>.from(json['images'] ?? []),
-      price: double.tryParse(json['price'].toString()) ?? 0.0,
+      price: (json['price'] ?? 0).toDouble(),
       colors: List<String>.from(json['colors'] ?? []),
       suitableBodyTypes: List<String>.from(json['suitableBodyTypes'] ?? []),
-      shoppingCenterId: json['shoppingCenterId'] ?? '',
+      shoppingCenterId: json['shoppingCenterId'] is String
+          ? json['shoppingCenterId']
+          : json['shoppingCenterId']?['_id'] ?? '',
       totalStock: json['totalStock'] ?? 0,
       isAvailable: json['isAvailable'] ?? false,
-      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
-      updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ?? DateTime.now(),
+      sellerInfo: json['shoppingCenterId'] is Map
+          ? SellerInfo.fromJson(json['shoppingCenterId'])
+          : null,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'description': description,
-      'category': category,
-      'genderType': genderType,
-      'sizes': sizes.map((s) => s.toJson()).toList(),
-      'images': images,
-      'price': price,
-      'colors': colors,
-      'suitableBodyTypes': suitableBodyTypes,
-    };
-  }
+  // Helper to check if this is a tailor product
+  bool get isTailorProduct => sellerInfo?.userType == 'TAILOR';
 }
 
 class SizeStock {
   final String size;
   final int stock;
 
-  SizeStock({
-    required this.size,
-    required this.stock,
-  });
+  SizeStock({required this.size, required this.stock});
 
   factory SizeStock.fromJson(Map<String, dynamic> json) {
     return SizeStock(
@@ -87,10 +75,26 @@ class SizeStock {
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'size': size,
-      'stock': stock,
-    };
+  Map<String, dynamic> toJson() => {'size': size, 'stock': stock};
+}
+
+// NEW: Seller information
+class SellerInfo {
+  final String userType;
+  final String businessName;
+  final String contactNumber;
+
+  SellerInfo({
+    required this.userType,
+    required this.businessName,
+    required this.contactNumber,
+  });
+
+  factory SellerInfo.fromJson(Map<String, dynamic> json) {
+    return SellerInfo(
+      userType: json['userType'] ?? '',
+      businessName: json['businessName'] ?? json['name'] ?? '',
+      contactNumber: json['contactNumber'] ?? '',
+    );
   }
 }

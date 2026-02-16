@@ -215,4 +215,66 @@ class ProductProvider with ChangeNotifier {
       rethrow;
     }
   }
+
+  // NEW: Fetch all products for customer shop (with filters)
+  List<Product> _allProducts = [];
+  List<Product> get allProducts => _allProducts;
+
+  Future<void> fetchAllProducts({
+    String? genderType,
+    String? category,
+    double? minPrice,
+    double? maxPrice,
+    String? size,
+    String? bodyType,
+  }) async {
+    try {
+      _isLoading = true;
+      _errorMessage = null;
+      notifyListeners();
+
+      // Build query parameters
+      Map<String, dynamic> queryParams = {};
+      if (genderType != null && genderType.isNotEmpty) queryParams['genderType'] = genderType;
+      if (category != null && category.isNotEmpty) queryParams['category'] = category;
+      if (minPrice != null) queryParams['minPrice'] = minPrice.toString();
+      if (maxPrice != null) queryParams['maxPrice'] = maxPrice.toString();
+      if (size != null && size.isNotEmpty) queryParams['size'] = size;
+      if (bodyType != null && bodyType.isNotEmpty) queryParams['bodyType'] = bodyType;
+
+      print('🔍 Fetching all products with filters: $queryParams');
+
+      final response = await _client.get(
+        '$BASE_URL/product/',
+        queryParameters: queryParams,
+      );
+
+      print('📦 All products response: ${response.data}');
+
+      if (response.data is Map && response.data['success'] == true) {
+        final data = response.data['data'];
+        if (data is List) {
+          _allProducts = data
+              .map((p) => Product.fromJson(p as Map<String, dynamic>))
+              .toList();
+          print('✅ Loaded ${_allProducts.length} products');
+        }
+      } else if (response.data is List) {
+        _allProducts = (response.data as List)
+            .map((p) => Product.fromJson(p as Map<String, dynamic>))
+            .toList();
+        print('✅ Loaded ${_allProducts.length} products from direct list');
+      }
+
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      print('❌ Fetch all products error: $e');
+      _isLoading = false;
+      _errorMessage = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
 }
+

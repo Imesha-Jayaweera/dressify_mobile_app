@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'otp_page.dart';
 import 'shopping_center_dashboard.dart';
+import 'tailor_dashboard.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({Key? key}) : super(key: key);
@@ -50,11 +51,15 @@ class _SignInPageState extends State<SignInPage> {
             ),
           );
         } else if (userType == 'TAILOR') {
-          // Navigate to tailor dashboard
-          Navigator.pushReplacementNamed(context, '/tailor-dashboard');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (_) => const TailorDashboard()
+            ),
+          );
         } else {
           // Customer
-          Navigator.pushReplacementNamed(context, '/ai-image-analysis');
+          Navigator.pushReplacementNamed(context, '/customer-dashboard');
         }
       }
     } catch (e) {

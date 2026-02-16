@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import '../providers/body_analysis_provider.dart';
+import '../../providers/body_analysis_provider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'fashion_tips_page.dart';
 
@@ -21,7 +21,6 @@ class _BodyMeasurementPageState extends State<BodyMeasurementPage> {
 
   final ImagePicker _picker = ImagePicker();
 
-  /// Pick image from gallery
   Future<void> pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
@@ -29,10 +28,12 @@ class _BodyMeasurementPageState extends State<BodyMeasurementPage> {
     }
   }
 
-  /// Send image to backend for analysis
   Future<void> analyzeImage() async {
     if (_imageFile == null) {
-      Fluttertoast.showToast(msg: "Please select an image first");
+      Fluttertoast.showToast(
+        msg: "Please select an image first",
+        backgroundColor: const Color(0xFF8E2DE2),
+      );
       return;
     }
 
@@ -51,11 +52,24 @@ class _BodyMeasurementPageState extends State<BodyMeasurementPage> {
 
       print("Sending image with MIME type: image/$mimeType");
       print("Base64 length: ${base64Image.length}");
-      print("First 50 chars of base64: ${base64Image.substring(0, 50)}");
 
-      // Call your ApiService
       final bodyAnalysisProvider = Provider.of<BodyAnalysisProvider>(context, listen: false);
       final analysis = await bodyAnalysisProvider.analyzeBodyImage(dataUrl);
+      if (analysis == null ||
+          analysis.gender == null ||
+          analysis.skinColor == null ||
+          analysis.bodyType == null ||
+          analysis.heightCm == null ||
+          analysis.widthCm == null ||
+          analysis.heightCm == 0 ||
+          analysis.widthCm == 0) {
+
+        Fluttertoast.showToast(
+          msg: "No valid person detected in the image",
+          backgroundColor: Colors.red,
+        );
+        return;
+      }
       if (analysis != null) {
         setState(() {
           result = {
@@ -66,11 +80,17 @@ class _BodyMeasurementPageState extends State<BodyMeasurementPage> {
             'width_cm': analysis.widthCm,
           };
         });
+        Fluttertoast.showToast(
+          msg: "Analysis Complete",
+          backgroundColor: const Color(0xFF8E2DE2),
+        );
       }
-      Fluttertoast.showToast(msg: "Analysis complete");
     } catch (e) {
       print("Error analyzing image: $e");
-      Fluttertoast.showToast(msg: "Failed to analyze image: $e");
+      Fluttertoast.showToast(
+        msg: "Failed to analyze image",
+        backgroundColor: Colors.red,
+      );
     } finally {
       setState(() => isLoading = false);
     }
@@ -80,17 +100,45 @@ class _BodyMeasurementPageState extends State<BodyMeasurementPage> {
   Widget buildResultCard(String title, String value, {IconData? icon}) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 5,
+      elevation: 3,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
           children: [
-            if (icon != null) Icon(icon, size: 28, color: Colors.deepPurple),
+            if (icon != null)
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF8E2DE2), Color(0xFFEC008C)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, size: 24, color: Colors.white),
+              ),
             if (icon != null) const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                "$title: $value",
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF8E2DE2),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -101,46 +149,123 @@ class _BodyMeasurementPageState extends State<BodyMeasurementPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("AI Body Measurement"),
-        backgroundColor: const Color(0xFF8E2DE2),
-      ),
-      backgroundColor: const Color(0xFFF6F0FA),
-      body: SingleChildScrollView(
+    return Container(
+      color: const Color(0xFFF6F0FA),
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            /// IMAGE SELECTOR - FIXED TO SHOW FULL IMAGE
+            // Header
+            const Text(
+              "AI Body Measurement",
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF8E2DE2),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Upload your photo for personalized fashion advice",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            /// IMAGE SELECTOR
             GestureDetector(
               onTap: pickImage,
               child: Container(
-                height: 300, // Increased height
+                height: 320,
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.deepPurple, width: 2),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF8E2DE2), width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF8E2DE2).withOpacity(0.1),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
                 ),
                 child: _imageFile == null
-                    ? const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add_photo_alternate, size: 64, color: Colors.deepPurple),
-                      SizedBox(height: 8),
-                      Text(
-                        "Tap to select image",
-                        style: TextStyle(color: Colors.deepPurple, fontWeight: FontWeight.bold),
+                    ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF8E2DE2), Color(0xFFEC008C)],
+                        ),
+                        shape: BoxShape.circle,
                       ),
-                    ],
-                  ),
+                      child: const Icon(
+                        Icons.add_photo_alternate,
+                        size: 48,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      "Tap to select image",
+                      style: TextStyle(
+                        color: Color(0xFF8E2DE2),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Choose a full-body photo for best results",
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 )
                     : ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Image.file(
-                    _imageFile!,
-                    fit: BoxFit.contain, // Shows full image without cropping
+                  borderRadius: BorderRadius.circular(20),
+                  child: Stack(
+                    children: [
+                      Image.file(
+                        _imageFile!,
+                        fit: BoxFit.contain,
+                        width: double.infinity,
+                        height: double.infinity,
+                      ),
+                      Positioned(
+                        top: 12,
+                        right: 12,
+                        child: GestureDetector(
+                          onTap: () => setState(() => _imageFile = null),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  blurRadius: 8,
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -151,12 +276,13 @@ class _BodyMeasurementPageState extends State<BodyMeasurementPage> {
             /// ANALYZE BUTTON
             SizedBox(
               width: double.infinity,
-              height: 52,
+              height: 56,
               child: ElevatedButton(
                 onPressed: isLoading ? null : analyzeImage,
                 style: ElevatedButton.styleFrom(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   padding: EdgeInsets.zero,
+                  elevation: 5,
                 ),
                 child: Ink(
                   decoration: BoxDecoration(
@@ -167,10 +293,28 @@ class _BodyMeasurementPageState extends State<BodyMeasurementPage> {
                   ),
                   child: Center(
                     child: isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                      "Analyze",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                        ? const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 3,
+                      ),
+                    )
+                        : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.auto_awesome, color: Colors.white, size: 24),
+                        SizedBox(width: 12),
+                        Text(
+                          "Analyze with AI",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -181,14 +325,46 @@ class _BodyMeasurementPageState extends State<BodyMeasurementPage> {
 
             /// RESULT DISPLAY
             if (result != null) ...[
-              buildResultCard("Gender", result!["gender"] ?? "-", icon: Icons.male),
-              buildResultCard("Skin Color", result!["skin_color"] ?? "-", icon: Icons.color_lens),
-              buildResultCard("Body Type", result!["body_type"] ?? "-", icon: Icons.accessibility_new),
-              buildResultCard("Height (cm)", result!["height_cm"]?.toString() ?? "-", icon: Icons.height),
-              buildResultCard("Width (cm)", result!["width_cm"]?.toString() ?? "-", icon: Icons.swap_horiz),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF8E2DE2).withOpacity(0.1),
+                      const Color(0xFFEC008C).withOpacity(0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Color(0xFF8E2DE2), size: 28),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        "Analysis Complete!",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF8E2DE2),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 20),
 
-              const SizedBox(height: 10),
+              buildResultCard("Gender", result!["gender"] ?? "-", icon: Icons.person),
+              const SizedBox(height: 12),
+              buildResultCard("Skin Color", result!["skin_color"] ?? "-", icon: Icons.color_lens),
+              const SizedBox(height: 12),
+              buildResultCard("Body Type", result!["body_type"] ?? "-", icon: Icons.accessibility_new),
+              const SizedBox(height: 12),
+              buildResultCard("Height (cm)", result!["height_cm"]?.toString() ?? "-", icon: Icons.height),
+              const SizedBox(height: 12),
+              buildResultCard("Width (cm)", result!["width_cm"]?.toString() ?? "-", icon: Icons.swap_horiz),
+              const SizedBox(height: 24),
 
               /// FASHION TIPS CTA BOX
               GestureDetector(
@@ -211,38 +387,43 @@ class _BodyMeasurementPageState extends State<BodyMeasurementPage> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF8E2DE2).withOpacity(0.4),
+                        color: const Color(0xFF8E2DE2).withOpacity(0.5),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
                     ],
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(28),
                     child: Column(
                       children: [
-                        const Icon(
-                          Icons.auto_awesome,
-                          size: 48,
-                          color: Colors.white,
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.auto_awesome,
+                            size: 48,
+                            color: Colors.white,
+                          ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
                         Text(
-                          result!["gender"] == "male"
-                              ? "Hello Sir! 👔"
-                              : "Hello Miss! 👗",
+                          result!["gender"] == "male" ? "Hello Sir! 👔" : "Hello Miss! 👗",
                           style: const TextStyle(
-                            fontSize: 24,
+                            fontSize: 26,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
                         ),
                         const SizedBox(height: 12),
                         const Text(
-                          "Would you like to dress fashionably\nwith your body shape?",
+                          "Ready to discover your perfect style?",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 16,
@@ -250,12 +431,18 @@ class _BodyMeasurementPageState extends State<BodyMeasurementPage> {
                             height: 1.5,
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                              ),
+                            ],
                           ),
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
@@ -268,10 +455,11 @@ class _BodyMeasurementPageState extends State<BodyMeasurementPage> {
                                   fontSize: 16,
                                 ),
                               ),
-                              SizedBox(width: 8),
+                              SizedBox(width: 12),
                               Icon(
                                 Icons.arrow_forward,
                                 color: Color(0xFF8E2DE2),
+                                size: 20,
                               ),
                             ],
                           ),

@@ -14,7 +14,6 @@ class BodyAnalysisProvider with ChangeNotifier {
   BodyAnalysis? get currentAnalysis => _currentAnalysis;
   bool get isLoading => _isLoading;
 
-  // Analyze Body Image API Call
   Future<BodyAnalysis?> analyzeBodyImage(String base64Image) async {
     _isLoading = true;
     notifyListeners();

@@ -53,7 +53,7 @@ class _OtpPageState extends State<OtpPage> {
         Navigator.pushReplacementNamed(context, '/tailor-dashboard');
       } else {
         // CUSTOMER
-        Navigator.pushReplacementNamed(context, '/ai-image-analysis');
+        Navigator.pushReplacementNamed(context, '/customer-dashboard');
       }
     } catch (e) {
       Fluttertoast.showToast(

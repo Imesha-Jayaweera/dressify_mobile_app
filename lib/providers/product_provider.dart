@@ -13,8 +13,13 @@ class ProductProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
+  List<Product> _recommendedProducts = [];
+  List<Product> get recommendedProducts => _recommendedProducts;
+
   List<Product> get products => _products;
+
   bool get isLoading => _isLoading;
+
   String? get errorMessage => _errorMessage;
 
   // FETCH MY PRODUCTS
@@ -65,10 +70,10 @@ class ProductProvider with ChangeNotifier {
   }
 
   Future<void> addProduct(
-      Map<String, dynamic> productData,
-      List<File> imageFiles,
-      String shoppingCenterId,
-      ) async {
+    Map<String, dynamic> productData,
+    List<File> imageFiles,
+    String shoppingCenterId,
+  ) async {
     try {
       print('📦 Starting product upload with ${imageFiles.length} images...');
 
@@ -135,7 +140,10 @@ class ProductProvider with ChangeNotifier {
   }
 
   // UPDATE PRODUCT - IMPROVED VERSION
-  Future<void> updateProduct(String productId, Map<String, dynamic> productData) async {
+  Future<void> updateProduct(
+    String productId,
+    Map<String, dynamic> productData,
+  ) async {
     try {
       print('🔄 Updating product: $productId');
       print('📝 Update data: $productData');
@@ -152,11 +160,13 @@ class ProductProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         // Find the product's shopping center ID for refresh
         final product = _products.firstWhere(
-              (p) => p.id == productId,
+          (p) => p.id == productId,
           orElse: () => _products.first,
         );
 
-        print('🔄 Refreshing product list for shopping center: ${product.shoppingCenterId}');
+        print(
+          '🔄 Refreshing product list for shopping center: ${product.shoppingCenterId}',
+        );
 
         // Force refresh from backend to get updated totalStock
         await fetchMyProducts(product.shoppingCenterId);
@@ -218,6 +228,7 @@ class ProductProvider with ChangeNotifier {
 
   // NEW: Fetch all products for customer shop (with filters)
   List<Product> _allProducts = [];
+
   List<Product> get allProducts => _allProducts;
 
   Future<void> fetchAllProducts({
@@ -235,12 +246,15 @@ class ProductProvider with ChangeNotifier {
 
       // Build query parameters
       Map<String, dynamic> queryParams = {};
-      if (genderType != null && genderType.isNotEmpty) queryParams['genderType'] = genderType;
-      if (category != null && category.isNotEmpty) queryParams['category'] = category;
+      if (genderType != null && genderType.isNotEmpty)
+        queryParams['genderType'] = genderType;
+      if (category != null && category.isNotEmpty)
+        queryParams['category'] = category;
       if (minPrice != null) queryParams['minPrice'] = minPrice.toString();
       if (maxPrice != null) queryParams['maxPrice'] = maxPrice.toString();
       if (size != null && size.isNotEmpty) queryParams['size'] = size;
-      if (bodyType != null && bodyType.isNotEmpty) queryParams['bodyType'] = bodyType;
+      if (bodyType != null && bodyType.isNotEmpty)
+        queryParams['bodyType'] = bodyType;
 
       print('🔍 Fetching all products with filters: $queryParams');
 
@@ -276,5 +290,52 @@ class ProductProvider with ChangeNotifier {
       rethrow;
     }
   }
-}
 
+  Future<void> fetchRecommendedProducts({
+    required String genderType,
+    required String bodyType,
+    String? skinTone,
+  }) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      print(
+        '🎯 Fetching recommended products for: Gender=$genderType, Body=$bodyType, Skin=$skinTone',
+      );
+
+      Map<String, dynamic> queryParams = {
+        'genderType': genderType,
+        'bodyType': bodyType,
+      };
+
+      if (skinTone != null && skinTone.isNotEmpty) {
+        queryParams['skinTone'] = skinTone;
+      }
+
+      final response = await _client.get(
+        '$BASE_URL/product/recommended',
+        queryParameters: queryParams,
+      );
+
+      print('📦 Recommended products response: ${response.data}');
+
+      if (response.data['success'] == true) {
+        final data = response.data['data'];
+        if (data is List) {
+          _recommendedProducts = data
+              .map((p) => Product.fromJson(p as Map<String, dynamic>))
+              .toList();
+          print('✅ Loaded ${_recommendedProducts.length} recommended products');
+        }
+      }
+
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      print('❌ Fetch recommended products error: $e');
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+}

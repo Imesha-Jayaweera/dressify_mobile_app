@@ -138,7 +138,7 @@ class _TailorDashboardState extends State<TailorDashboard> {
               ),
               const SizedBox(height: 12),
               const Text(
-                "This action cannot be undone.",
+                "This action can't be undo.",
                 style: TextStyle(
                   color: Colors.red,
                   fontSize: 13,

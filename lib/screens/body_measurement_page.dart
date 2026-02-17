@@ -367,6 +367,7 @@ class _BodyMeasurementPageState extends State<BodyMeasurementPage> {
               const SizedBox(height: 24),
 
               /// FASHION TIPS CTA BOX
+              /// FASHION TIPS BUTTON
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -387,85 +388,130 @@ class _BodyMeasurementPageState extends State<BodyMeasurementPage> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF8E2DE2).withOpacity(0.5),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
+                        color: const Color(0xFF8E2DE2).withOpacity(0.3),
+                        blurRadius: 15,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(28),
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.auto_awesome,
-                            size: 48,
-                            color: Colors.white,
-                          ),
+                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        const SizedBox(height: 20),
-                        Text(
-                          result!["gender"] == "male" ? "Hello Sir! 👔" : "Hello Miss! 👗",
-                          style: const TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                        child: const Icon(
+                          Icons.lightbulb,
+                          color: Colors.white,
+                          size: 28,
                         ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          "Ready to discover your perfect style?",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white,
-                            height: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 10,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Get Fashion Tips",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
-                            ],
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                "Get Your Style Tips",
-                                style: TextStyle(
-                                  color: Color(0xFF8E2DE2),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              result!["gender"] == "male" ? "Style guide for you, Sir 👔" : "Style guide for you, Miss 👗",
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.white70,
                               ),
-                              SizedBox(width: 12),
-                              Icon(
-                                Icons.arrow_forward,
-                                color: Color(0xFF8E2DE2),
-                                size: 20,
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              /// ✅ NEW: READY TO SHOP BUTTON
+              GestureDetector(
+                onTap: () => _navigateToRecommendedShop(context),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Colors.orange, Colors.deepOrange],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.orange.withOpacity(0.3),
+                        blurRadius: 15,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.shopping_bag,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Ready to Shop",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              "Find clothes that match your body",
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -473,6 +519,27 @@ class _BodyMeasurementPageState extends State<BodyMeasurementPage> {
           ],
         ),
       ),
+    );
+  }
+
+  void _navigateToRecommendedShop(BuildContext context) {
+    if (result == null) {
+      Fluttertoast.showToast(
+        msg: "Please analyze your body first!",
+        backgroundColor: Colors.orange,
+      );
+      return;
+    }
+
+    // Navigate to Recommended Shop page
+    Navigator.pushNamed(
+      context,
+      '/shop-recommendations',
+      arguments: {
+        'genderType': result!['gender']?.toUpperCase() ?? 'FEMALE',
+        'bodyType': result!['body_type']?.toUpperCase() ?? 'RECTANGLE',
+        'skinTone': result!['skin_color'] ?? 'medium',
+      },
     );
   }
 }

@@ -17,6 +17,7 @@ import 'screens/shop_page.dart';
 import 'screens/cart_page.dart';
 import 'screens/orders_page.dart';
 import 'screens/tailor_dashboard.dart';
+import 'screens/recommended_shop_page.dart';
 
 void main() {
   runApp(
@@ -54,6 +55,17 @@ class MyApp extends StatelessWidget {
           final initialTab = args?['initialTab'] ?? 0;
           return MaterialPageRoute(
             builder: (context) => CustomerDashboard(initialTab: initialTab),
+          );
+        }
+
+        if (settings.name == '/shop-recommendations') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(
+            builder: (context) => RecommendedShopPage(
+              genderType: args['genderType'],
+              bodyType: args['bodyType'],
+              skinTone: args['skinTone'],
+            ),
           );
         }
 

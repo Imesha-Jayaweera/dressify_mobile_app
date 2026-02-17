@@ -26,7 +26,7 @@ class FashionTipsPage extends StatelessWidget {
       "bestColors": ["Coral", "Turquoise", "Light Purple", "Cream", "Soft Yellow"],
       "avoidColors": ["Very Pale Colors", "Harsh Black"],
       "description": "Warm and cool tones both complement your skin beautifully",
-      "gradient": [Color(0xFFFFE0CC), Color(0xFFFFD4B8)],
+      "gradient": [Color(0xFFA88873), Color(0x81E8580D)],
     },
     "light to medium": {
       "name": "Light-Medium",

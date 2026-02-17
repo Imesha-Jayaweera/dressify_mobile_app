@@ -117,7 +117,7 @@ class _ShoppingCenterDashboardState extends State<ShoppingCenterDashboard> {
               ),
               const SizedBox(height: 12),
               const Text(
-                "This action cannot be undone.",
+                "This action can't be undo.",
                 style: TextStyle(
                   color: Colors.red,
                   fontSize: 13,
